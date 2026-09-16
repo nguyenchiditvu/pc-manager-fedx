@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sơ đồ phòng làm việc</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --text: #172033;
+      --muted: #64748b;
+      --line: #d8e0eb;
+      --primary: #3157d5;
+      --primary-strong: #2344b8;
+      --primary-soft: #e9efff;
+      --chair: #0f8b73;
+      --chair-soft: #dff7f0;
+      --desk: #b86517;
+      --desk-soft: #fff0d9;
+      --wall: #586577;
+      --danger: #c83c4a;
+      --danger-soft: #fff0f2;
+      --shadow: 0 12px 32px rgba(32, 47, 73, .09);
+      --radius: 14px;
+      --cell-size: 64px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--bg);
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, select { font: inherit; }
+    button, select, input[type="range"] { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, .grid-cell:focus-visible {
+      outline: 3px solid rgba(49, 87, 213, .28);
+      outline-offset: 2px;
+    }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+    }
+    .icon { width: 19px; height: 19px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    .app { min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: flex; align-items: center; gap: 18px; min-height: 72px; padding: 12px 20px;
+      background: rgba(255, 255, 255, .94); border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 250px; }
+    .brand-mark {
+      display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px;
+      color: white; background: var(--primary); box-shadow: 0 7px 18px rgba(49, 87, 213, .24);
+    }
+    .brand h1 { margin: 0; font-size: 17px; line-height: 1.25; }
+    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+    .room-name {
+      width: min(360px, 32vw); min-height: 44px; padding: 9px 13px;
+      color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
+      font-weight: 650;
+    }
+    .top-actions { display: flex; gap: 8px; margin-left: auto; }
+    .btn {
+      min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 8px 13px; border: 1px solid var(--line); border-radius: 10px;
+      color: #334155; background: var(--surface); font-weight: 650; text-decoration: none; transition: background .18s ease, border-color .18s ease, color .18s ease;
+    }
+    .btn:hover { background: #f1f5f9; border-color: #bec9d8; }
+    .btn.primary { color: white; background: var(--primary); border-color: var(--primary); }
+    .btn.primary:hover { background: var(--primary-strong); }
+    .btn.danger { color: var(--danger); }
+    .btn.danger:hover { background: var(--danger-soft); border-color: #facbd1; }
+    .btn.icon-only { width: 44px; padding: 0; }
+    .btn:disabled { opacity: .42; cursor: not-allowed; }
+
+    .workspace { flex: 1; display: grid; grid-template-columns: 238px minmax(0, 1fr) 300px; min-height: 0; }
+    .sidebar {
+      position: sticky; top: 72px; height: calc(100vh - 72px); overflow-y: auto;
+      padding: 18px 16px; background: var(--surface); border-right: 1px solid var(--line);
+    }
+    .sidebar.right { border-right: 0; border-left: 1px solid var(--line); }
+    .section + .section { margin-top: 24px; padding-top: 20px; border-top: 1px solid #e8edf4; }
+    .section-title { margin: 0 0 10px; color: #526075; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .tool-list { display: grid; gap: 8px; }
+    .tool {
+      width: 100%; min-height: 48px; display: flex; align-items: center; gap: 11px; padding: 9px 11px;
+      border: 1px solid transparent; border-radius: 11px; color: #39465a; background: transparent; text-align: left; font-weight: 650;
+    }
+    .tool:hover { background: #f5f7fb; }
+    .tool[aria-pressed="true"] { color: var(--primary-strong); background: var(--primary-soft); border-color: #cdd9ff; }
+    .tool-symbol { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: #edf1f6; }
+    .tool[aria-pressed="true"] .tool-symbol { background: white; }
+    .tool kbd { margin-left: auto; padding: 1px 6px; color: #7a879a; background: white; border: 1px solid #dce3ec; border-radius: 5px; font-size: 11px; font-weight: 600; }
+    .mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .field label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 12px; font-weight: 700; }
+    .field input, .field select, .panel-select {
+      width: 100%; min-height: 42px; padding: 8px 10px; color: var(--text); background: white;
+      border: 1px solid var(--line); border-radius: 9px;
+    }
+    .hint { margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+    .shortcut-list { display: grid; gap: 8px; color: var(--muted); font-size: 12px; }
+    .shortcut-list span { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    kbd { padding: 2px 7px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; color: #475569; background: #f8fafc; font: 11px ui-monospace, SFMono-Regular, Consolas, monospace; }
+
+    .main { min-width: 0; display: flex; flex-direction: column; }
+    .canvas-toolbar {
+      display: flex; align-items: center; gap: 9px; min-height: 58px; padding: 8px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--line);
+    }
+    .status { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .status-dot { width: 8px; height: 8px; border-radius: 99px; background: #16a36a; box-shadow: 0 0 0 4px #e1f7ed; }
+    .status-text { color: var(--muted); font-size: 13px; white-space: nowrap; }
+    .toolbar-divider { width: 1px; height: 28px; margin: 0 3px; background: var(--line); }
+    .zoom { display: flex; align-items: center; gap: 9px; margin-left: auto; }
+    .zoom input { width: 105px; }
+    .zoom-output { width: 42px; color: var(--muted); font-size: 12px; text-align: right; }
+    .canvas-wrap { flex: 1; min-height: 520px; overflow: auto; padding: 24px; touch-action: pan-x pan-y; }
+    .sheet-shell { width: max-content; min-width: 100%; padding: 0 18px 18px 0; }
+    .sheet {
+      display: grid; width: max-content; background: var(--surface); border: 1px solid #cbd5e1;
+      box-shadow: var(--shadow); user-select: none;
+    }
+    .corner, .col-head, .row-head {
+      display: grid; place-items: center; color: #69778c; background: #f4f7fa;
+      border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+      font-size: 11px; font-weight: 750;
+    }
+    .corner { position: sticky; top: 0; left: 0; z-index: 4; }
+    .col-head { position: sticky; top: 0; z-index: 3; height: 28px; }
+    .row-head { position: sticky; left: 0; z-index: 2; width: 34px; }
+    .grid-cell {
+      position: relative; width: var(--cell-size); height: var(--cell-size); padding: 4px;
+      overflow: hidden; border: 0; border-right: 1px solid #dfe5ed; border-bottom: 1px solid #dfe5ed;
+      color: var(--text); background: white; cursor: crosshair;
+    }
+    .grid-cell:hover { background: #f6f9ff; box-shadow: inset 0 0 0 2px #9db2fa; z-index: 1; }
+    .grid-cell.selected { box-shadow: inset 0 0 0 3px var(--primary); z-index: 2; }
+    .grid-cell.chair { background: var(--chair-soft); }
+    .grid-cell.desk { background: var(--desk-soft); }
+    .cell-icon { position: absolute; inset: 6px; display: grid; place-items: center; pointer-events: none; }
+    .chair-shape { width: 31px; height: 31px; border: 3px solid var(--chair); border-radius: 9px 9px 5px 5px; position: relative; transform: rotate(var(--rotation, 0deg)); }
+    .chair-shape::after { content: ""; position: absolute; left: -7px; right: -7px; bottom: -8px; height: 6px; border-radius: 4px; background: var(--chair); }
+    .desk-shape { width: 47px; height: 34px; display: grid; place-items: center; border: 2px solid var(--desk); border-radius: 5px; color: #7a3d0e; background: rgba(255,255,255,.64); transform: rotate(var(--rotation, 0deg)); }
+    .desk-label { max-width: 43px; overflow: hidden; font-size: 9px; font-weight: 850; white-space: nowrap; text-overflow: ellipsis; }
+    .wall-shape { width: 48px; height: 7px; border-radius: 3px; background: var(--wall); box-shadow: inset 0 0 0 1px #384354; transform: rotate(var(--rotation, 0deg)); }
+    .pc-badge { position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: #16a36a; box-shadow: 0 0 0 2px white; }
+
+    .empty-panel { padding: 18px 5px; color: var(--muted); text-align: center; }
+    .empty-illustration { width: 64px; height: 64px; display: grid; place-items: center; margin: 4px auto 14px; color: #8291a6; background: #f0f4f8; border-radius: 18px; }
+    .empty-panel strong { display: block; color: #3c485c; margin-bottom: 5px; }
+    .property-panel[hidden] { display: none; }
+    .selected-kind { display: flex; align-items: center; gap: 10px; padding: 11px; margin-bottom: 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 11px; }
+    .selected-kind strong { display: block; }
+    .selected-kind span { color: var(--muted); font-size: 12px; }
+    .form-stack { display: grid; gap: 13px; }
+    .panel-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+    .pc-card { margin-top: 14px; padding: 13px; background: #f8fafc; border: 1px solid var(--line); border-radius: 11px; }
+    .pc-card h3 { margin: 0 0 9px; font-size: 14px; }
+    .detail-list { display: grid; grid-template-columns: 82px 1fr; gap: 7px 8px; margin: 0; font-size: 12px; }
+    .detail-list dt { color: var(--muted); }
+    .detail-list dd { margin: 0; color: #334155; overflow-wrap: anywhere; }
+    .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat { padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfe; }
+    .stat strong { display: block; font-size: 19px; font-variant-numeric: tabular-nums; }
+    .stat span { color: var(--muted); font-size: 11px; }
+
+    .menu { position: relative; }
+    .menu-popover {
+      position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 225px; padding: 7px;
+      background: white; border: 1px solid var(--line); border-radius: 11px; box-shadow: var(--shadow);
+    }
+    .menu-popover[hidden] { display: none; }
+    .menu-popover button { width: 100%; justify-content: flex-start; border-color: transparent; }
+    .toast {
+      position: fixed; left: 50%; bottom: 22px; z-index: 100; transform: translate(-50%, 18px);
+      max-width: min(420px, calc(100vw - 32px)); padding: 11px 16px; color: white; background: #263247;
+      border-radius: 10px; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 1100px) {
+      .workspace { grid-template-columns: 210px minmax(0, 1fr); }
+      .sidebar.right { position: fixed; top: 72px; right: 0; z-index: 35; width: 300px; transform: translateX(100%); transition: transform .2s ease; box-shadow: var(--shadow); }
+      .sidebar.right.open { transform: translateX(0); }
+      .properties-toggle { display: inline-flex !important; }
+    }
+    @media (max-width: 720px) {
+      .topbar { padding: 10px 12px; gap: 10px; flex-wrap: wrap; }
+      .brand { min-width: 0; flex: 1; }
+      .brand p { display: none; }
+      .room-name { order: 3; width: 100%; }
+      .top-actions .btn .button-text { display: none; }
+      .workspace { display: block; }
+      .sidebar.left { position: static; width: auto; height: auto; overflow: visible; border-right: 0; border-bottom: 1px solid var(--line); padding: 10px 12px; }
+      .sidebar.left .section:not(:first-child) { display: none; }
+      .tool-list { grid-template-columns: repeat(5, minmax(64px, 1fr)); gap: 5px; }
+      .tool { min-height: 60px; flex-direction: column; justify-content: center; gap: 3px; padding: 5px; font-size: 11px; }
+      .tool kbd { display: none; }
+      .tool-symbol { height: 23px; background: transparent; }
+      .canvas-toolbar { padding: 7px 10px; }
+      .status-text { display: none; }
+      .zoom input { width: 80px; }
+      .canvas-wrap { min-height: 500px; padding: 12px; }
+      .sidebar.right { top: 0; height: 100dvh; width: min(330px, 92vw); z-index: 80; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+    @media print {
+      .topbar, .sidebar, .canvas-toolbar { display: none !important; }
+      .workspace { display: block; }
+      .canvas-wrap { overflow: visible; padding: 0; }
+      .sheet { box-shadow: none; }
+      .grid-cell { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <svg class="sr-only" aria-hidden="true">
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></symbol>
+    <symbol id="i-cursor" viewBox="0 0 24 24"><path d="m5 3 14 9-7 1-3 7z"/></symbol>
+    <symbol id="i-chair" viewBox="0 0 24 24"><rect x="7" y="4" width="10" height="11" rx="3"/><path d="M4 13v4h16v-4M7 17v3M17 17v3"/></symbol>
+    <symbol id="i-desk" viewBox="0 0 24 24"><path d="M3 7h18v7H3zM6 14v7M18 14v7"/></symbol>
+    <symbol id="i-wall" viewBox="0 0 24 24"><path d="M3 9h18v6H3zM8 9v6M16 9v6"/></symbol>
+    <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 18-3-3L14 5l5 5-8 8zM7 18h13"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7 4 12l5 5M5 12h8a6 6 0 0 1 6 6"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 7 5 5-5 5M19 12h-8a6 6 0 0 0-6 6"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h12l2 2v16H5zM8 3v6h8V3M8 21v-8h8v8"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"/></symbol>
+    <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M20 7v5h-5M19 12a7 7 0 1 0-2 5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+    <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4V9h16v8h-3M7 14h10v7H7z"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></symbol>
+  </svg>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg></div>
+        <div><h1>Trình dựng sơ đồ phòng</h1><p>Tự động lưu trên trình duyệt</p></div>
+      </div>
+      <label class="sr-only" for="roomName">Tên phòng</label>
+      <input id="roomName" class="room-name" value="Phòng làm việc" maxlength="80">
+      <div class="top-actions">
+        <a class="btn" href="pc-manager.html" aria-label="Chuyển sang trang quản lý cấu hình PC"><svg class="icon"><use href="#i-settings"/></svg><span class="button-text">Quản lý cấu hình PC</span></a>
+        <button class="btn primary" id="saveBtn" type="button"><svg class="icon"><use href="#i-save"/></svg><span class="button-text">Lưu sơ đồ</span></button>
+        <div class="menu">
+          <button class="btn icon-only" id="moreBtn" type="button" aria-label="Mở menu dữ liệu" aria-expanded="false"><svg class="icon"><use href="#i-more"/></svg></button>
+          <div class="menu-popover" id="moreMenu" hidden>
+            <button class="btn" id="exportLayoutBtn" type="button"><svg class="icon"><use href="#i-download"/></svg>Xuất sơ đồ JSON</button>
+            <button class="btn" id="importLayoutBtn" type="button"><svg class="icon"><use href="#i-upload"/></svg>Nhập sơ đồ JSON</button>
+            <button class="btn" id="exportPcBtn" type="button"><svg class="icon"><use href="#i-download"/></svg>Xuất danh sách PC</button>
+            <button class="btn" id="importPcBtn" type="button"><svg class="icon"><use href="#i-upload"/></svg>Nhập danh sách PC</button>
+            <button class="btn" id="printBtn" type="button"><svg class="icon"><use href="#i-print"/></svg>In sơ đồ</button>
+            <button class="btn danger" id="resetBtn" type="button"><svg class="icon"><use href="#i-trash"/></svg>Xóa toàn bộ sơ đồ</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar left" aria-label="Công cụ vẽ">
+        <section class="section">
+          <h2 class="section-title">Thành phần</h2>
+          <div class="tool-list" role="toolbar" aria-label="Chọn thành phần để vẽ">
+            <button class="tool" data-tool="select" aria-pressed="true"><span class="tool-symbol"><svg class="icon"><use href="#i-cursor"/></svg></span>Chọn<kbd>V</kbd></button>
+            <button class="tool" data-tool="chair" aria-pressed="false"><span class="tool-symbol"><svg class="icon"><use href="#i-chair"/></svg></span>Ghế<kbd>G</kbd></button>
+            <button class="tool" data-tool="desk" aria-pressed="false"><span class="tool-symbol"><svg class="icon"><use href="#i-desk"/></svg></span>Bàn<kbd>B</kbd></button>
+            <button class="tool" data-tool="wall" aria-pressed="false"><span class="tool-symbol"><svg class="icon"><use href="#i-wall"/></svg></span>Vách ngăn<kbd>N</kbd></button>
+            <button class="tool" data-tool="erase" aria-pressed="false"><span class="tool-symbol"><svg class="icon"><use href="#i-eraser"/></svg></span>Xóa ô<kbd>X</kbd></button>
+          </div>
+        </section>
+        <section class="section">
+          <h2 class="section-title">Kích thước lưới</h2>
+          <div class="mini-grid">
+            <div class="field"><label for="rowCount">Số hàng</label><input id="rowCount" type="number" min="2" max="40" value="12"></div>
+            <div class="field"><label for="colCount">Số cột</label><input id="colCount" type="number" min="2" max="40" value="16"></div>
+          </div>
+          <button class="btn" id="resizeBtn" type="button" style="width:100%; margin-top:8px">Cập nhật lưới</button>
+          <p class="hint">Các ô nằm ngoài kích thước mới sẽ bị loại bỏ.</p>
+        </section>
+        <section class="section">
+          <h2 class="section-title">Thao tác nhanh</h2>
+          <div class="shortcut-list">
+            <span>Hoàn tác <kbd>Ctrl + Z</kbd></span><span>Làm lại <kbd>Ctrl + Y</kbd></span>
+            <span>Xoay vật thể <kbd>R</kbd></span><span>Xóa vật thể <kbd>Delete</kbd></span>
+          </div>
+        </section>
+      </aside>
+
+      <main class="main">
+        <div class="canvas-toolbar">
+          <div class="status"><span class="status-dot"></span><span class="status-text" id="saveStatus">Đã lưu</span></div>
+          <div class="toolbar-divider"></div>
+          <button class="btn icon-only" id="undoBtn" type="button" aria-label="Hoàn tác" disabled><svg class="icon"><use href="#i-undo"/></svg></button>
+          <button class="btn icon-only" id="redoBtn" type="button" aria-label="Làm lại" disabled><svg class="icon"><use href="#i-redo"/></svg></button>
+          <button class="btn icon-only properties-toggle" id="propertiesToggle" type="button" aria-label="Mở thuộc tính" style="display:none"><svg class="icon"><use href="#i-settings"/></svg></button>
+          <div class="zoom">
+            <svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg>
+            <label class="sr-only" for="zoomRange">Thu phóng</label>
+            <input id="zoomRange" type="range" min="70" max="130" step="10" value="100">
+            <output id="zoomOutput" class="zoom-output">100%</output>
+          </div>
+        </div>
+        <div class="canvas-wrap" id="canvasWrap">
+          <div class="sheet-shell"><div class="sheet" id="sheet" role="grid" aria-label="Sơ đồ chỗ ngồi"></div></div>
+        </div>
+      </main>
+
+      <aside class="sidebar right" id="propertiesSidebar" aria-label="Thuộc tính ô">
+        <section class="section">
+          <h2 class="section-title">Thuộc tính</h2>
+          <div class="empty-panel" id="emptyPanel">
+            <div class="empty-illustration"><svg class="icon" style="width:30px;height:30px"><use href="#i-cursor"/></svg></div>
+            <strong>Chưa chọn ô</strong>
+            Chọn một ghế, bàn hoặc vách ngăn để chỉnh sửa.
+          </div>
+          <div class="property-panel" id="propertyPanel" hidden>
+            <div class="selected-kind"><span class="tool-symbol" id="selectedIcon"></span><div><strong id="selectedTitle"></strong><span id="selectedPosition"></span></div></div>
+            <div class="form-stack">
+              <div class="field"><label for="itemLabel">Nhãn hiển thị</label><input id="itemLabel" maxlength="30" placeholder="Ví dụ: Bàn trưởng phòng"></div>
+              <div class="field" id="pcField"><label for="pcSelect">Máy tính tại bàn</label><select id="pcSelect" class="panel-select"></select></div>
+            </div>
+            <div class="pc-card" id="pcCard" hidden></div>
+            <div class="panel-actions">
+              <button class="btn" id="rotateBtn" type="button"><svg class="icon"><use href="#i-rotate"/></svg>Xoay</button>
+              <button class="btn danger" id="deleteBtn" type="button"><svg class="icon"><use href="#i-trash"/></svg>Xóa</button>
+            </div>
+          </div>
+        </section>
+        <section class="section">
+          <h2 class="section-title">Tổng quan</h2>
+          <div class="summary">
+            <div class="stat"><strong id="deskStat">0</strong><span>Bàn</span></div>
+            <div class="stat"><strong id="chairStat">0</strong><span>Ghế</span></div>
+            <div class="stat"><strong id="wallStat">0</strong><span>Vách ngăn</span></div>
+            <div class="stat"><strong id="pcStat">0</strong><span>PC đã gán</span></div>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <input class="sr-only" id="layoutFile" type="file" accept="application/json,.json">
+  <input class="sr-only" id="pcFile" type="file" accept="application/json,.json">
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+
+
+  <script>
+    (async () => {
+      'use strict';
+      const STORAGE_KEY = 'room-map-layout-v1';
+      const PC_STORAGE_KEY = 'room-map-pcs-v1';
+      const MAX_HISTORY = 60;
+      const typeNames = { chair: 'Ghế', desk: 'Bàn', wall: 'Vách ngăn' };
+      const typeIcons = { chair: 'i-chair', desk: 'i-desk', wall: 'i-wall' };
+      const $ = (id) => document.getElementById(id);
+      let pcLoadError = false;
+      let pcs = await loadPcData();
+      let state = loadJson(STORAGE_KEY, { roomName: 'Phòng làm việc', rows: 12, cols: 16, cells: {} });
+      let activeTool = 'select';
+      let selectedKey = null;
+      let isPainting = false;
+      let paintedKeys = new Set();
+      let history = [];
+      let future = [];
+      let toastTimer;
+
+      normalizeState();
+      $('roomName').value = state.roomName;
+      $('rowCount').value = state.rows;
+      $('colCount').value = state.cols;
+
+      function loadJson(key, fallback) {
+        try { return JSON.parse(localStorage.getItem(key)) || structuredClone(fallback); }
+        catch { return structuredClone(fallback); }
+      }
+      async function loadPcData() {
+        const saved = localStorage.getItem(PC_STORAGE_KEY);
+        if (saved) {
+          try { const value = JSON.parse(saved); if (validatePcData(value)) return value; }
+          catch { /* Tiếp tục đọc tệp JSON gốc. */ }
+        }
+        try {
+          const response = await fetch('./pc-data.json', { cache: 'no-store' });
+          if (!response.ok) throw new Error('Không đọc được pc-data.json');
+          const value = await response.json();
+          if (!validatePcData(value)) throw new Error('Dữ liệu PC không hợp lệ');
+          localStorage.setItem(PC_STORAGE_KEY, JSON.stringify(value));
+          return value;
+        } catch {
+          pcLoadError = true;
+          return [];
+        }
+      }
+      function normalizeState() {
+        state.roomName = String(state.roomName || 'Phòng làm việc');
+        state.rows = clamp(Number(state.rows) || 12, 2, 40);
+        state.cols = clamp(Number(state.cols) || 16, 2, 40);
+        state.cells = state.cells && typeof state.cells === 'object' ? state.cells : {};
+        Object.keys(state.cells).forEach(key => {
+          const item = state.cells[key];
+          if (!item || !['chair', 'desk', 'wall'].includes(item.type)) delete state.cells[key];
+          else { item.rotation = Number(item.rotation) || 0; item.label = String(item.label || ''); item.pcCode = String(item.pcCode || ''); }
+        });
+      }
+      function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+      function cloneState() { return JSON.parse(JSON.stringify(state)); }
+      function keyOf(row, col) { return `${row}-${col}`; }
+      function parseKey(key) { const [row, col] = key.split('-').map(Number); return { row, col }; }
+      function columnName(index) { let n = index + 1, name = ''; while (n) { n--; name = String.fromCharCode(65 + n % 26) + name; n = Math.floor(n / 26); } return name; }
+      function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+
+      function renderGrid() {
+        const sheet = $('sheet');
+        sheet.style.gridTemplateColumns = `34px repeat(${state.cols}, var(--cell-size))`;
+        sheet.style.gridTemplateRows = `28px repeat(${state.rows}, var(--cell-size))`;
+        const fragment = document.createDocumentFragment();
+        const corner = document.createElement('div'); corner.className = 'corner'; corner.setAttribute('aria-hidden', 'true'); fragment.append(corner);
+        for (let col = 0; col < state.cols; col++) {
+          const head = document.createElement('div'); head.className = 'col-head'; head.textContent = columnName(col); fragment.append(head);
+        }
+        for (let row = 0; row < state.rows; row++) {
+          const head = document.createElement('div'); head.className = 'row-head'; head.textContent = row + 1; fragment.append(head);
+          for (let col = 0; col < state.cols; col++) fragment.append(createCell(row, col));
+        }
+        sheet.replaceChildren(fragment);
+        renderProperties();
+        renderStats();
+      }
+
+      function createCell(row, col) {
+        const key = keyOf(row, col);
+        const item = state.cells[key];
+        const cell = document.createElement('button');
+        cell.type = 'button'; cell.className = 'grid-cell'; cell.dataset.key = key; cell.setAttribute('role', 'gridcell');
+        if (key === selectedKey) cell.classList.add('selected');
+        if (!item) { cell.setAttribute('aria-label', `Ô ${columnName(col)}${row + 1}, trống`); return cell; }
+        cell.classList.add(item.type);
+        const pc = item.pcCode ? pcs.find(p => p.code === item.pcCode) : null;
+        const details = [typeNames[item.type], item.label, pc?.code, pc?.user].filter(Boolean).join(', ');
+        cell.setAttribute('aria-label', `Ô ${columnName(col)}${row + 1}, ${details}`);
+        cell.title = details;
+        const visual = document.createElement('span'); visual.className = 'cell-icon';
+        if (item.type === 'chair') visual.innerHTML = `<span class="chair-shape" style="--rotation:${item.rotation}deg"></span>`;
+        if (item.type === 'wall') visual.innerHTML = `<span class="wall-shape" style="--rotation:${item.rotation}deg"></span>`;
+        if (item.type === 'desk') {
+          const label = item.label || item.pcCode || 'Bàn';
+          visual.innerHTML = `<span class="desk-shape" style="--rotation:${item.rotation}deg"><span class="desk-label">${escapeHtml(label)}</span></span>${pc ? '<span class="pc-badge"></span>' : ''}`;
+        }
+        cell.append(visual);
+        return cell;
+      }
+
+      function selectTool(tool) {
+        activeTool = tool;
+        document.querySelectorAll('.tool').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.tool === tool)));
+      }
+      function snapshot() {
+        history.push(cloneState());
+        if (history.length > MAX_HISTORY) history.shift();
+        future = [];
+        updateHistoryButtons();
+      }
+      function undo() {
+        if (!history.length) return;
+        future.push(cloneState()); state = history.pop(); selectedKey = null; syncInputs(); renderGrid(); save(false); updateHistoryButtons();
+      }
+      function redo() {
+        if (!future.length) return;
+        history.push(cloneState()); state = future.pop(); selectedKey = null; syncInputs(); renderGrid(); save(false); updateHistoryButtons();
+      }
+      function updateHistoryButtons() { $('undoBtn').disabled = !history.length; $('redoBtn').disabled = !future.length; }
+      function syncInputs() { $('roomName').value = state.roomName; $('rowCount').value = state.rows; $('colCount').value = state.cols; }
+
+      function applyTool(key, startOfStroke = false) {
+        if (activeTool === 'select') { selectedKey = state.cells[key] ? key : null; renderGrid(); openPropertiesOnSmallScreen(); return; }
+        if (paintedKeys.has(key)) return;
+        if (startOfStroke) snapshot();
+        paintedKeys.add(key);
+        if (activeTool === 'erase') { delete state.cells[key]; if (selectedKey === key) selectedKey = null; }
+        else {
+          const previous = state.cells[key];
+          state.cells[key] = previous?.type === activeTool ? previous : { type: activeTool, rotation: 0, label: '', pcCode: '' };
+          selectedKey = key;
+        }
+        renderGrid(); save(false);
+      }
+
+      function renderProperties() {
+        const item = selectedKey ? state.cells[selectedKey] : null;
+        $('emptyPanel').hidden = Boolean(item); $('propertyPanel').hidden = !item;
+        if (!item) return;
+        const { row, col } = parseKey(selectedKey);
+        $('selectedIcon').innerHTML = `<svg class="icon"><use href="#${typeIcons[item.type]}"/></svg>`;
+        $('selectedTitle').textContent = typeNames[item.type];
+        $('selectedPosition').textContent = `Ô ${columnName(col)}${row + 1}`;
+        $('itemLabel').value = item.label || '';
+        $('pcField').hidden = item.type !== 'desk';
+        const usedByOtherDesk = new Set(Object.entries(state.cells).filter(([key, value]) => key !== selectedKey && value.type === 'desk' && value.pcCode).map(([, value]) => value.pcCode));
+        $('pcSelect').innerHTML = '<option value="">— Chưa gán máy tính —</option>' + pcs.map(pc => {
+          const used = usedByOtherDesk.has(pc.code); const user = pc.user ? ` · ${pc.user}` : '';
+          return `<option value="${escapeHtml(pc.code)}" ${pc.code === item.pcCode ? 'selected' : ''} ${used ? 'disabled' : ''}>${escapeHtml(pc.code + user + (used ? ' · đã dùng' : ''))}</option>`;
+        }).join('');
+        renderPcCard(item.pcCode);
+      }
+
+      function renderPcCard(code) {
+        const card = $('pcCard'); const pc = pcs.find(value => value.code === code);
+        card.hidden = !pc;
+        if (!pc) { card.innerHTML = ''; return; }
+        card.innerHTML = `<h3>${escapeHtml(pc.code)}</h3><dl class="detail-list">
+          <dt>Người dùng</dt><dd>${escapeHtml(pc.user || 'Chưa có')}</dd>
+          <dt>Nguồn</dt><dd>${escapeHtml(pc.source === '01' ? 'TVU (01)' : pc.source === '02' ? 'FEDX (02)' : pc.source)}</dd>
+          <dt>Mã số</dt><dd>${escapeHtml(pc.assetNumber)}</dd>
+          <dt>Ngày dùng</dt><dd>${escapeHtml(pc.usageDate || 'Chưa có')}</dd>
+          <dt>Cấu hình</dt><dd>${escapeHtml(pc.name || 'Chưa có')}</dd>
+        </dl>`;
+      }
+
+      function renderStats() {
+        const items = Object.values(state.cells);
+        $('deskStat').textContent = items.filter(i => i.type === 'desk').length;
+        $('chairStat').textContent = items.filter(i => i.type === 'chair').length;
+        $('wallStat').textContent = items.filter(i => i.type === 'wall').length;
+        $('pcStat').textContent = items.filter(i => i.type === 'desk' && i.pcCode).length;
+      }
+
+      function editSelected(mutator) {
+        if (!selectedKey || !state.cells[selectedKey]) return;
+        snapshot(); mutator(state.cells[selectedKey]); renderGrid(); save(false);
+      }
+      function deleteSelected() {
+        if (!selectedKey || !state.cells[selectedKey]) return;
+        snapshot(); delete state.cells[selectedKey]; selectedKey = null; renderGrid(); save(false); toast('Đã xóa vật thể khỏi ô.');
+      }
+      function save(showMessage = true) {
+        state.roomName = $('roomName').value.trim() || 'Phòng làm việc';
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        $('saveStatus').textContent = 'Đã lưu';
+        if (showMessage) toast('Đã lưu sơ đồ trên trình duyệt.');
+      }
+      function markDirty() { $('saveStatus').textContent = 'Đang lưu…'; clearTimeout(markDirty.timer); markDirty.timer = setTimeout(() => save(false), 350); }
+      function toast(message) { clearTimeout(toastTimer); $('toast').textContent = message; $('toast').classList.add('show'); toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2800); }
+      function downloadJson(data, filename) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); setTimeout(() => URL.revokeObjectURL(url), 500);
+      }
+      async function readJsonFile(file) { return JSON.parse(await file.text()); }
+      function validatePcData(value) { return Array.isArray(value) && value.every(pc => pc && typeof pc.code === 'string' && pc.code.trim()); }
+      function validateLayout(value) { return value && typeof value === 'object' && value.cells && typeof value.cells === 'object' && Number(value.rows) >= 2 && Number(value.cols) >= 2; }
+      function closeMenu() { $('moreMenu').hidden = true; $('moreBtn').setAttribute('aria-expanded', 'false'); }
+      function openPropertiesOnSmallScreen() { if (window.innerWidth <= 1100 && selectedKey) $('propertiesSidebar').classList.add('open'); }
+
+      document.querySelectorAll('.tool').forEach(btn => btn.addEventListener('click', () => selectTool(btn.dataset.tool)));
+      $('sheet').addEventListener('pointerdown', event => {
+        const cell = event.target.closest('.grid-cell'); if (!cell || event.button !== 0) return;
+        isPainting = activeTool !== 'select'; paintedKeys.clear(); applyTool(cell.dataset.key, isPainting);
+      });
+      $('sheet').addEventListener('pointerover', event => { const cell = event.target.closest('.grid-cell'); if (isPainting && cell) applyTool(cell.dataset.key); });
+      window.addEventListener('pointerup', () => { isPainting = false; paintedKeys.clear(); });
+      $('sheet').addEventListener('keydown', event => {
+        const cell = event.target.closest('.grid-cell'); if (!cell) return;
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); paintedKeys.clear(); applyTool(cell.dataset.key, activeTool !== 'select'); paintedKeys.clear(); }
+        const { row, col } = parseKey(cell.dataset.key); const moves = { ArrowUp: [-1,0], ArrowDown:[1,0], ArrowLeft:[0,-1], ArrowRight:[0,1] };
+        if (moves[event.key]) { event.preventDefault(); const [dr, dc] = moves[event.key]; const next = document.querySelector(`[data-key="${keyOf(clamp(row+dr,0,state.rows-1),clamp(col+dc,0,state.cols-1))}"]`); next?.focus(); }
+      });
+
+      $('itemLabel').addEventListener('change', () => editSelected(item => { item.label = $('itemLabel').value.trim(); }));
+      $('pcSelect').addEventListener('change', () => editSelected(item => { item.pcCode = $('pcSelect').value; }));
+      $('rotateBtn').addEventListener('click', () => editSelected(item => { item.rotation = (item.rotation + 90) % 360; }));
+      $('deleteBtn').addEventListener('click', deleteSelected);
+      $('undoBtn').addEventListener('click', undo); $('redoBtn').addEventListener('click', redo);
+      $('saveBtn').addEventListener('click', () => save(true));
+      $('roomName').addEventListener('input', () => { state.roomName = $('roomName').value; markDirty(); });
+      $('resizeBtn').addEventListener('click', () => {
+        const rows = clamp(Number($('rowCount').value) || state.rows, 2, 40); const cols = clamp(Number($('colCount').value) || state.cols, 2, 40);
+        if (rows === state.rows && cols === state.cols) return toast('Kích thước lưới không thay đổi.');
+        const removesItems = Object.keys(state.cells).some(key => { const {row,col}=parseKey(key); return row >= rows || col >= cols; });
+        if (removesItems && !confirm('Thu nhỏ lưới sẽ xóa các vật thể nằm ngoài vùng mới. Bạn muốn tiếp tục?')) { syncInputs(); return; }
+        snapshot(); state.rows = rows; state.cols = cols; Object.keys(state.cells).forEach(key => { const {row,col}=parseKey(key); if (row >= rows || col >= cols) delete state.cells[key]; });
+        selectedKey = null; renderGrid(); save(false); toast(`Đã đổi lưới thành ${rows} × ${cols}.`);
+      });
+      $('zoomRange').addEventListener('input', () => {
+        const zoom = Number($('zoomRange').value); document.documentElement.style.setProperty('--cell-size', `${64 * zoom / 100}px`); $('zoomOutput').value = `${zoom}%`;
+      });
+      $('moreBtn').addEventListener('click', event => { event.stopPropagation(); const open = $('moreMenu').hidden; $('moreMenu').hidden = !open; $('moreBtn').setAttribute('aria-expanded', String(open)); });
+      document.addEventListener('click', event => { if (!event.target.closest('.menu')) closeMenu(); });
+      $('exportLayoutBtn').addEventListener('click', () => { save(false); downloadJson({ version: 1, ...state }, `${state.roomName.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'so-do-phong'}.json`); closeMenu(); toast('Đã xuất sơ đồ JSON.'); });
+      $('exportPcBtn').addEventListener('click', () => { downloadJson(pcs, 'danh-sach-pc.json'); closeMenu(); toast(`Đã xuất ${pcs.length} máy tính.`); });
+      $('importLayoutBtn').addEventListener('click', () => { closeMenu(); $('layoutFile').click(); });
+      $('importPcBtn').addEventListener('click', () => { closeMenu(); $('pcFile').click(); });
+      $('printBtn').addEventListener('click', () => { closeMenu(); window.print(); });
+      $('layoutFile').addEventListener('change', async event => {
+        const file = event.target.files[0]; if (!file) return;
+        try { const value = await readJsonFile(file); if (!validateLayout(value)) throw new Error(); snapshot(); state = value; normalizeState(); selectedKey = null; syncInputs(); renderGrid(); save(false); toast('Đã nhập sơ đồ thành công.'); }
+        catch { toast('Không thể nhập: tệp sơ đồ JSON không hợp lệ.'); }
+        event.target.value = '';
+      });
+      $('pcFile').addEventListener('change', async event => {
+        const file = event.target.files[0]; if (!file) return;
+        try { const value = await readJsonFile(file); if (!validatePcData(value)) throw new Error(); pcs = value; localStorage.setItem(PC_STORAGE_KEY, JSON.stringify(pcs)); renderGrid(); save(false); toast(`Đã nhập ${pcs.length} máy tính.`); }
+        catch { toast('Không thể nhập: danh sách PC phải là mảng JSON có trường “code”.'); }
+        event.target.value = '';
+      });
+      $('resetBtn').addEventListener('click', () => {
+        closeMenu(); if (!confirm('Xóa toàn bộ bàn, ghế và vách ngăn trên sơ đồ? Thao tác này có thể hoàn tác.')) return;
+        snapshot(); state.cells = {}; selectedKey = null; renderGrid(); save(false); toast('Đã xóa toàn bộ sơ đồ.');
+      });
+      $('propertiesToggle').addEventListener('click', () => $('propertiesSidebar').classList.toggle('open'));
+      window.addEventListener('storage', event => {
+        if (event.key !== PC_STORAGE_KEY || !event.newValue) return;
+        try { const value = JSON.parse(event.newValue); if (validatePcData(value)) { pcs = value; renderGrid(); toast('Danh sách PC vừa được cập nhật.'); } }
+        catch { /* Bỏ qua dữ liệu không hợp lệ từ tab khác. */ }
+      });
+
+      document.addEventListener('keydown', event => {
+        const typing = ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName);
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? redo() : undo(); return; }
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') { event.preventDefault(); redo(); return; }
+        if (event.key === 'Escape') { closeMenu(); $('propertiesSidebar').classList.remove('open'); return; }
+        if (typing) return;
+        const shortcuts = { v:'select', g:'chair', b:'desk', n:'wall', x:'erase' };
+        if (shortcuts[event.key.toLowerCase()]) selectTool(shortcuts[event.key.toLowerCase()]);
+        if (event.key.toLowerCase() === 'r') editSelected(item => { item.rotation = (item.rotation + 90) % 360; });
+        if (event.key === 'Delete' || event.key === 'Backspace') deleteSelected();
+      });
+
+      renderGrid(); updateHistoryButtons(); save(false);
+      if (pcLoadError) toast('Chưa đọc được pc-data.json. Hãy chạy bằng máy chủ cục bộ hoặc nhập JSON trong menu.');
+    })();
+  </script>
+</body>
+</html>

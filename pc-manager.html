@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quản lý cấu hình PC</title>
+  <style>
+    :root {
+      --bg: #f4f7fb; --surface: #fff; --surface-2: #f8fafc; --text: #172033;
+      --muted: #64748b; --line: #d8e0eb; --primary: #3157d5; --primary-strong: #2344b8;
+      --primary-soft: #e9efff; --danger: #bd3443; --danger-soft: #fff0f2;
+      --success: #087a58; --warning: #9a5a0a; --shadow: 0 12px 32px rgba(32,47,73,.09);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--text); background: var(--bg); font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    button, input, select, textarea { font: inherit; }
+    button, select { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid rgba(49,87,213,.28); outline-offset: 2px; }
+    .icon { width: 19px; height: 19px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 14px; min-height: 72px; padding: 12px 22px; background: rgba(255,255,255,.95); border-bottom: 1px solid var(--line); backdrop-filter: blur(12px); }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 260px; }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; color: white; background: var(--primary); border-radius: 12px; box-shadow: 0 7px 18px rgba(49,87,213,.24); }
+    h1 { margin: 0; font-size: 18px; line-height: 1.2; }
+    .brand p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .top-actions { display: flex; gap: 8px; margin-left: auto; }
+    .btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 13px; color: #334155; background: white; border: 1px solid var(--line); border-radius: 10px; font-weight: 680; text-decoration: none; transition: background .18s ease, border-color .18s ease, color .18s ease; }
+    .btn:hover { background: #f1f5f9; border-color: #bec9d8; }
+    .btn.primary { color: white; background: var(--primary); border-color: var(--primary); }
+    .btn.primary:hover { background: var(--primary-strong); }
+    .btn.danger { color: var(--danger); }
+    .btn.danger:hover { background: var(--danger-soft); border-color: #facbd1; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn.icon-only { width: 44px; padding: 0; }
+    .content { max-width: 1500px; margin: 0 auto; padding: 22px; }
+    .notice { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 18px; padding: 14px 16px; color: #4a3a23; background: #fff8e8; border: 1px solid #f0d49b; border-radius: 12px; }
+    .notice strong { display: block; margin-bottom: 2px; color: #6e4308; }
+    .notice p { margin: 0; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 18px; align-items: start; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+    .card-head { display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 11px 16px; border-bottom: 1px solid var(--line); }
+    .card-head h2 { margin: 0; font-size: 16px; }
+    .count { padding: 3px 9px; color: var(--primary-strong); background: var(--primary-soft); border-radius: 99px; font-size: 12px; font-weight: 750; }
+    .search { position: relative; width: min(330px, 45%); margin-left: auto; }
+    .search .icon { position: absolute; top: 50%; left: 12px; transform: translateY(-50%); color: #718096; pointer-events: none; }
+    .search input { width: 100%; min-height: 42px; padding: 8px 12px 8px 40px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); }
+    .table-wrap { overflow: auto; max-height: calc(100vh - 252px); }
+    table { width: 100%; border-collapse: collapse; min-width: 820px; }
+    th { position: sticky; top: 0; z-index: 2; padding: 11px 12px; color: #556277; background: #f3f6fa; border-bottom: 1px solid var(--line); font-size: 12px; text-align: left; }
+    td { padding: 12px; border-bottom: 1px solid #e8edf4; vertical-align: top; }
+    tbody tr { transition: background .15s ease; }
+    tbody tr:hover { background: #f8faff; }
+    tbody tr.selected { background: var(--primary-soft); }
+    .code { color: var(--primary-strong); font-weight: 780; font-variant-numeric: tabular-nums; }
+    .config { max-width: 340px; color: #475569; font-size: 13px; }
+    .muted { color: var(--muted); }
+    .row-actions { display: flex; gap: 5px; }
+    .row-actions button { width: 38px; height: 38px; display: grid; place-items: center; color: #4b5a70; background: transparent; border: 1px solid transparent; border-radius: 8px; }
+    .row-actions button:hover { background: white; border-color: var(--line); }
+    .row-actions .delete:hover { color: var(--danger); background: var(--danger-soft); border-color: #facbd1; }
+    .empty { padding: 54px 20px; color: var(--muted); text-align: center; }
+    .empty strong { display: block; margin-bottom: 5px; color: #3c485c; }
+    .editor { position: sticky; top: 90px; }
+    .editor .card-head { justify-content: space-between; }
+    form { padding: 16px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .field.full { grid-column: 1 / -1; }
+    label { display: block; margin-bottom: 5px; color: #526075; font-size: 12px; font-weight: 750; }
+    .required { color: var(--danger); }
+    input, select, textarea { width: 100%; min-height: 44px; padding: 9px 11px; color: var(--text); background: white; border: 1px solid var(--line); border-radius: 9px; }
+    textarea { min-height: 108px; resize: vertical; }
+    input[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(189,52,67,.1); }
+    .error { min-height: 18px; margin: 4px 0 0; color: var(--danger); font-size: 12px; }
+    .form-actions { display: flex; gap: 8px; margin-top: 16px; padding-top: 15px; border-top: 1px solid #e8edf4; }
+    .form-actions .primary { flex: 1; }
+    .save-state { display: flex; align-items: center; gap: 8px; padding: 10px 16px; color: var(--muted); background: #fbfcfe; border-top: 1px solid var(--line); border-radius: 0 0 14px 14px; font-size: 12px; }
+    .save-state .dot { width: 8px; height: 8px; border-radius: 99px; background: var(--success); }
+    .save-state.file-dirty .dot { background: #d68513; }
+    .save-state.saving .dot { background: var(--primary); animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: .35; transform: scale(.82); } }
+    .toast { position: fixed; left: 50%; bottom: 22px; z-index: 100; max-width: min(460px, calc(100vw - 32px)); padding: 11px 16px; color: white; background: #263247; border-radius: 10px; box-shadow: var(--shadow); opacity: 0; transform: translate(-50%,18px); pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%,0); }
+    @media (max-width: 1040px) { .layout { grid-template-columns: 1fr; } .editor { position: static; } .table-wrap { max-height: none; } }
+    @media (max-width: 720px) {
+      .topbar { padding: 10px 12px; flex-wrap: wrap; }
+      .brand { min-width: 0; flex: 1; }
+      .brand p { display: none; }
+      .top-actions { width: 100%; margin: 0; overflow-x: auto; padding-bottom: 2px; }
+      .top-actions .btn { white-space: nowrap; }
+      .content { padding: 12px; }
+      .notice { font-size: 13px; }
+      .card-head { flex-wrap: wrap; }
+      .search { order: 2; width: 100%; margin: 0; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+    }
+    @media (prefers-reduced-motion: reduce) { *,*::before,*::after { transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <svg class="sr-only" aria-hidden="true">
+    <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="m14 5 5 5L8 21H3v-5zM12 7l5 5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5zM15 3v5h5"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h12l2 2v16H5zM8 3v6h8V3M8 21v-8h8v8"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  </svg>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><svg class="icon"><use href="#i-monitor"/></svg></div>
+      <div><h1>Quản lý cấu hình PC</h1><p>Danh mục thiết bị cho sơ đồ phòng</p></div>
+    </div>
+    <div class="top-actions">
+      <a class="btn" href="map.html"><svg class="icon"><use href="#i-map"/></svg>Sơ đồ phòng</a>
+      <button class="btn" id="openFileBtn" type="button"><svg class="icon"><use href="#i-file"/></svg>Mở tệp JSON</button>
+      <button class="btn" id="saveFileBtn" type="button" disabled><svg class="icon"><use href="#i-save"/></svg>Lưu vào tệp</button>
+      <button class="btn" id="exportBtn" type="button"><svg class="icon"><use href="#i-download"/></svg>Xuất JSON</button>
+      <button class="btn primary" id="addBtn" type="button"><svg class="icon"><use href="#i-plus"/></svg>Thêm PC</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="notice" id="notice">
+      <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
+      <div><strong>Tự động cập nhật file sau khi cấp quyền</strong><p>Chọn <code>pc-data.json</code> một lần bằng “Mở tệp JSON”. Sau đó mỗi lần thêm, sửa hoặc xóa PC, trang sẽ tự ghi lại file. Nút “Lưu vào tệp” dùng để thử lại nếu việc tự lưu gặp lỗi.</p></div>
+    </div>
+
+    <div class="layout">
+      <section class="card" aria-labelledby="listTitle">
+        <div class="card-head">
+          <h2 id="listTitle">Danh sách PC</h2><span class="count" id="count">0 máy</span>
+          <div class="search"><svg class="icon"><use href="#i-search"/></svg><label class="sr-only" for="searchInput">Tìm PC</label><input id="searchInput" type="search" placeholder="Tìm mã, người dùng, cấu hình…"></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Mã PC</th><th>Nguồn</th><th>Người sử dụng</th><th>Cấu hình</th><th>Ngày dùng</th><th aria-label="Thao tác"></th></tr></thead>
+            <tbody id="pcTableBody"></tbody>
+          </table>
+          <div class="empty" id="emptyState" hidden><strong>Không tìm thấy máy tính</strong>Thử thay đổi từ khóa hoặc thêm một PC mới.</div>
+        </div>
+      </section>
+
+      <aside class="card editor" aria-labelledby="editorTitle">
+        <div class="card-head"><h2 id="editorTitle">Thêm PC mới</h2><button class="btn icon-only" id="closeEditorBtn" type="button" aria-label="Làm trống biểu mẫu"><svg class="icon"><use href="#i-x"/></svg></button></div>
+        <form id="pcForm" novalidate>
+          <div class="form-grid">
+            <div class="field"><label for="symbol">Ký hiệu</label><input id="symbol" name="symbol" value="CPU" maxlength="20"></div>
+            <div class="field"><label for="source">Nguồn</label><input id="source" name="source" list="sourceOptions" placeholder="01 hoặc 02" maxlength="20"><datalist id="sourceOptions"><option value="01">TVU</option><option value="02">FEDX</option></datalist></div>
+            <div class="field"><label for="assetNumber">Mã số</label><input id="assetNumber" name="assetNumber" maxlength="30"></div>
+            <div class="field"><label for="code">Mã PC <span class="required">*</span></label><input id="code" name="code" required maxlength="50" aria-describedby="codeError"><p class="error" id="codeError" role="alert"></p></div>
+            <div class="field full"><label for="name">Tên CSVC / cấu hình</label><textarea id="name" name="name"></textarea></div>
+            <div class="field"><label for="department">Phòng ban</label><input id="department" name="department" maxlength="100"></div>
+            <div class="field"><label for="user">Người sử dụng</label><input id="user" name="user" maxlength="100"></div>
+            <div class="field"><label for="usageDate">Ngày sử dụng</label><input id="usageDate" name="usageDate" placeholder="dd/mm/yyyy" maxlength="20"></div>
+            <div class="field"><label for="note">Ghi chú</label><input id="note" name="note" maxlength="250"></div>
+          </div>
+          <div class="form-actions"><button class="btn" id="cancelBtn" type="button">Làm mới</button><button class="btn primary" type="submit"><svg class="icon"><use href="#i-save"/></svg><span id="submitText">Thêm PC</span></button></div>
+        </form>
+        <div class="save-state" id="saveState"><span class="dot"></span><span id="saveStateText">Dữ liệu đã lưu trên trình duyệt</span></div>
+      </aside>
+    </div>
+  </main>
+
+  <input id="importFile" class="sr-only" type="file" accept="application/json,.json">
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      'use strict';
+      const PC_STORAGE_KEY = 'room-map-pcs-v1';
+      const LAYOUT_STORAGE_KEY = 'room-map-layout-v1';
+      const $ = id => document.getElementById(id);
+      const formFields = ['symbol','source','assetNumber','code','name','department','user','usageDate','note'];
+      let pcs = [];
+      let selectedCode = null;
+      let fileHandle = null;
+      let fileDirty = false;
+      let fileSaving = false;
+      let fileSaveVersion = 0;
+      let fileWriteQueue = Promise.resolve();
+      let toastTimer;
+
+      function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+      function isValidList(value) { return Array.isArray(value) && value.every(pc => pc && typeof pc.code === 'string' && pc.code.trim()); }
+      function normalizePc(pc) { const result = {}; formFields.forEach(key => result[key] = String(pc[key] ?? '').trim()); return result; }
+      function saveBrowser(markFileDirty = true) {
+        localStorage.setItem(PC_STORAGE_KEY, JSON.stringify(pcs));
+        if (markFileDirty) fileDirty = true;
+        renderSaveState();
+        if (markFileDirty && fileHandle) queueFileSave();
+      }
+      function renderSaveState() {
+        $('saveState').classList.toggle('file-dirty', fileDirty);
+        $('saveState').classList.toggle('saving', fileSaving);
+        $('saveStateText').textContent = fileSaving
+          ? `Đang cập nhật ${fileHandle?.name || 'pc-data.json'}…`
+          : fileDirty
+            ? (fileHandle ? `Chưa cập nhật được ${fileHandle.name}` : 'Đã lưu trên trình duyệt · chưa liên kết file JSON')
+            : (fileHandle ? `Đã cập nhật ${fileHandle.name}` : 'Dữ liệu đã lưu trên trình duyệt');
+        $('saveFileBtn').disabled = !fileHandle || !fileDirty || fileSaving;
+      }
+      function queueFileSave(showSuccessToast = true) {
+        if (!fileHandle) return;
+        const handle = fileHandle;
+        const content = JSON.stringify(pcs, null, 2);
+        const version = ++fileSaveVersion;
+        fileSaving = true;
+        renderSaveState();
+        fileWriteQueue = fileWriteQueue.then(async () => {
+          if (handle !== fileHandle) {
+            if (version === fileSaveVersion) { fileSaving = false; renderSaveState(); }
+            return;
+          }
+          try {
+            const writable = await handle.createWritable();
+            await writable.write(content);
+            await writable.close();
+            if (version === fileSaveVersion) {
+              fileDirty = false;
+              fileSaving = false;
+              renderSaveState();
+              if (showSuccessToast) toast(`Đã cập nhật ${handle.name}.`);
+            }
+          } catch {
+            if (version === fileSaveVersion) {
+              fileDirty = true;
+              fileSaving = false;
+              renderSaveState();
+              toast(`Không thể tự cập nhật ${handle.name}. Hãy nhấn “Lưu vào tệp” để thử lại.`);
+            }
+          }
+        });
+      }
+      function toast(message) { clearTimeout(toastTimer); $('toast').textContent = message; $('toast').classList.add('show'); toastTimer = setTimeout(() => $('toast').classList.remove('show'), 3000); }
+      function downloadJson() {
+        const blob = new Blob([JSON.stringify(pcs, null, 2)], {type:'application/json;charset=utf-8'});
+        const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'pc-data.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 500);
+      }
+
+      async function loadInitial() {
+        const saved = localStorage.getItem(PC_STORAGE_KEY);
+        if (saved) { try { const value = JSON.parse(saved); if (isValidList(value)) { pcs = value.map(normalizePc); render(); return; } } catch {} }
+        try {
+          const response = await fetch('./pc-data.json', {cache:'no-store'}); if (!response.ok) throw new Error();
+          const value = await response.json(); if (!isValidList(value)) throw new Error();
+          pcs = value.map(normalizePc); saveBrowser(false); render();
+        } catch {
+          pcs = []; render(); toast('Không đọc được pc-data.json. Hãy dùng “Mở tệp JSON” hoặc chạy trang bằng máy chủ cục bộ.');
+        }
+      }
+
+      function render() {
+        const query = $('searchInput').value.trim().toLocaleLowerCase('vi');
+        const filtered = pcs.filter(pc => Object.values(pc).some(value => String(value).toLocaleLowerCase('vi').includes(query)));
+        $('count').textContent = `${filtered.length}/${pcs.length} máy`;
+        $('emptyState').hidden = filtered.length > 0;
+        $('pcTableBody').innerHTML = filtered.map(pc => `<tr class="${pc.code === selectedCode ? 'selected' : ''}" data-code="${escapeHtml(pc.code)}">
+          <td><span class="code">${escapeHtml(pc.code)}</span><br><span class="muted">${escapeHtml(pc.assetNumber || 'Chưa có mã số')}</span></td>
+          <td>${escapeHtml(pc.source || '—')}</td><td>${escapeHtml(pc.user || 'Chưa gán')}</td>
+          <td class="config">${escapeHtml(pc.name || 'Chưa có cấu hình')}</td><td>${escapeHtml(pc.usageDate || '—')}</td>
+          <td><div class="row-actions"><button type="button" data-action="edit" aria-label="Sửa ${escapeHtml(pc.code)}"><svg class="icon"><use href="#i-edit"/></svg></button><button class="delete" type="button" data-action="delete" aria-label="Xóa ${escapeHtml(pc.code)}"><svg class="icon"><use href="#i-trash"/></svg></button></div></td>
+        </tr>`).join('');
+        renderSaveState();
+      }
+
+      function resetForm(focus = false) {
+        selectedCode = null; $('pcForm').reset(); $('symbol').value = 'CPU'; $('codeError').textContent = ''; $('code').removeAttribute('aria-invalid');
+        $('editorTitle').textContent = 'Thêm PC mới'; $('submitText').textContent = 'Thêm PC'; render(); if (focus) $('code').focus();
+      }
+      function editPc(code) {
+        const pc = pcs.find(item => item.code === code); if (!pc) return;
+        selectedCode = code; formFields.forEach(key => $(key).value = pc[key] || '');
+        $('editorTitle').textContent = `Chỉnh sửa ${code}`; $('submitText').textContent = 'Lưu thay đổi'; $('codeError').textContent = ''; $('code').removeAttribute('aria-invalid');
+        render(); if (window.innerWidth <= 1040) document.querySelector('.editor').scrollIntoView({behavior:'smooth', block:'start'});
+      }
+      function updateLayoutCode(oldCode, newCode) {
+        try {
+          const layout = JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY)); if (!layout?.cells) return;
+          let changed = false; Object.values(layout.cells).forEach(cell => { if (cell.pcCode === oldCode) { cell.pcCode = newCode; changed = true; } });
+          if (changed) localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
+        } catch {}
+      }
+      function deletePc(code) {
+        const pc = pcs.find(item => item.code === code); if (!pc || !confirm(`Xóa ${code} khỏi danh sách PC? Máy này cũng sẽ được gỡ khỏi các bàn đang sử dụng.`)) return;
+        pcs = pcs.filter(item => item.code !== code); updateLayoutCode(code, ''); if (selectedCode === code) resetForm(); saveBrowser(); render(); if (!fileHandle) toast(`Đã xóa ${code} trên trình duyệt.`);
+      }
+
+      $('pcForm').addEventListener('submit', event => {
+        event.preventDefault(); const data = normalizePc(Object.fromEntries(new FormData(event.currentTarget)));
+        const duplicate = pcs.some(pc => pc.code.toLocaleLowerCase() === data.code.toLocaleLowerCase() && pc.code !== selectedCode);
+        if (!data.code || duplicate) {
+          $('code').setAttribute('aria-invalid','true'); $('codeError').textContent = !data.code ? 'Vui lòng nhập mã PC.' : 'Mã PC này đã tồn tại.'; $('code').focus(); return;
+        }
+        $('code').removeAttribute('aria-invalid'); $('codeError').textContent = '';
+        if (selectedCode) {
+          const index = pcs.findIndex(pc => pc.code === selectedCode); if (index >= 0) pcs[index] = data;
+          if (selectedCode !== data.code) updateLayoutCode(selectedCode, data.code);
+        } else { pcs.push(data); }
+        pcs.sort((a,b) => a.code.localeCompare(b.code, 'vi', {numeric:true})); saveBrowser(); selectedCode = data.code; editPc(data.code);
+        if (!fileHandle) toast(`Đã lưu ${data.code} trên trình duyệt. Mở tệp JSON để bật tự cập nhật file.`);
+      });
+
+      $('pcTableBody').addEventListener('click', event => {
+        const button = event.target.closest('button[data-action]'); if (!button) return;
+        const code = button.closest('tr').dataset.code; button.dataset.action === 'edit' ? editPc(code) : deletePc(code);
+      });
+      $('searchInput').addEventListener('input', render);
+      $('addBtn').addEventListener('click', () => resetForm(true)); $('cancelBtn').addEventListener('click', () => resetForm(true)); $('closeEditorBtn').addEventListener('click', () => resetForm(false));
+      $('exportBtn').addEventListener('click', () => { downloadJson(); toast('Đã xuất pc-data.json. Hãy thay file cũ nếu muốn cập nhật dữ liệu gốc.'); });
+
+      $('openFileBtn').addEventListener('click', async () => {
+        if (!window.showOpenFilePicker) { $('importFile').click(); return; }
+        try {
+          [fileHandle] = await showOpenFilePicker({types:[{description:'Tệp JSON',accept:{'application/json':['.json']}}], multiple:false});
+          if (fileHandle.requestPermission && await fileHandle.requestPermission({mode:'readwrite'}) !== 'granted') throw new Error('permission');
+          const value = JSON.parse(await (await fileHandle.getFile()).text()); if (!isValidList(value)) throw new Error('invalid');
+          if (pcs.length && !confirm(`Nạp ${value.length} PC từ ${fileHandle.name} và thay danh sách hiện tại?`)) { fileHandle = null; return; }
+          fileSaveVersion++;
+          fileSaving = false;
+          pcs = value.map(normalizePc); selectedCode = null; fileDirty = false; saveBrowser(false); resetForm(); render(); toast(`Đã liên kết ${fileHandle.name}. Các thay đổi tiếp theo sẽ tự lưu vào file.`);
+        } catch (error) { if (error.name !== 'AbortError') { fileHandle = null; fileSaving = false; renderSaveState(); toast('Không thể mở hoặc chưa được cấp quyền ghi file JSON.'); } }
+      });
+      $('saveFileBtn').addEventListener('click', () => queueFileSave(true));
+      $('importFile').addEventListener('change', async event => {
+        const file = event.target.files[0]; if (!file) return;
+        try { const value = JSON.parse(await file.text()); if (!isValidList(value)) throw new Error(); pcs = value.map(normalizePc); selectedCode = null; fileHandle = null; saveBrowser(true); resetForm(); render(); toast(`Đã nhập ${pcs.length} PC. Dùng Xuất JSON để cập nhật file.`); }
+        catch { toast('Không thể nhập: tệp JSON không hợp lệ.'); }
+        event.target.value = '';
+      });
+      window.addEventListener('storage', event => { if (event.key === PC_STORAGE_KEY && event.newValue) { try { const value = JSON.parse(event.newValue); if (isValidList(value)) { pcs = value.map(normalizePc); render(); } } catch {} } });
+
+      loadInitial();
+    })();
+  </script>
+</body>
+</html>
